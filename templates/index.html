@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Twitter Sentiment Analysis Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+
+body{
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(-45deg,#667eea,#764ba2,#6dd5ed,#2193b0);
+    background-size:400% 400%;
+    animation:gradientBG 12s ease infinite;
+    min-height:100vh;
+}
+
+@keyframes gradientBG{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+.header{
+    text-align:center;
+    color:white;
+    padding:30px;
+}
+
+.twitter-logo{
+    font-size:80px;
+    color:#1DA1F2;
+    margin-bottom:10px;
+}
+
+.card{
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(15px);
+    border:none;
+    border-radius:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.2);
+    color:white;
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.btn-primary{
+    background:linear-gradient(45deg,#1DA1F2,#764ba2);
+    border:none;
+    border-radius:30px;
+    font-weight:bold;
+    width:100%;
+}
+
+.btn-primary:hover{
+    transform:scale(1.03);
+}
+
+.result-box{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.sentiment-badge{
+    padding:10px 20px;
+    border-radius:30px;
+    font-size:20px;
+}
+
+.positive{
+    background:#28a745;
+    color:white;
+}
+
+.negative{
+    background:#dc3545;
+    color:white;
+}
+
+.neutral{
+    background:#ffc107;
+    color:black;
+}
+
+.emoji{
+    position:fixed;
+    font-size:40px;
+    animation:float 5s infinite ease-in-out;
+}
+
+@keyframes float{
+    0%{transform:translateY(0);}
+    50%{transform:translateY(-20px);}
+    100%{transform:translateY(0);}
+}
+
+textarea{
+    border-radius:15px !important;
+}
+
+#clock{
+    font-size:18px;
+    margin-top:10px;
+}
+
+table{
+    background:white;
+}
+
+footer{
+    color:white;
+    text-align:center;
+    margin-top:20px;
+    padding:15px;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="emoji" style="top:10%;left:5%;">💙</div>
+<div class="emoji" style="top:15%;right:5%;">📊</div>
+<div class="emoji" style="bottom:15%;left:8%;">🔥</div>
+<div class="emoji" style="bottom:15%;right:8%;">🚀</div>
+
+<div class="header">
+
+    <i class="fa-brands fa-twitter twitter-logo"></i>
+
+    <h1>Twitter Sentiment Analysis Dashboard</h1>
+
+    <p>Real-Time Sentiment Analysis and Visualization of Twitter Data</p>
+
+    <div id="clock"></div>
+
+</div>
+
+<div class="container">
+
+    <div class="card p-4 mb-4">
+
+        <h4>Enter Tweet</h4>
+
+        <textarea
+        id="tweet"
+        class="form-control"
+        rows="4"
+        placeholder="Type your tweet here..."></textarea>
+
+        <div class="mt-2">
+            Characters:
+            <span id="charCount">0</span>
+        </div>
+
+        <button
+        class="btn btn-primary mt-3"
+        onclick="analyzeTweet()">
+        Analyze Tweet
+        </button>
+
+        <div
+        id="loader"
+        class="text-center mt-3"
+        style="display:none;">
+            <div class="spinner-border text-light"></div>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-6">
+            <div class="card p-4 mb-4">
+                <h4>Prediction</h4>
+
+                <div id="result" class="result-box">
+                    Waiting for analysis...
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-4 mb-4">
+                <h4>Confidence Score</h4>
+
+                <div id="confidence" class="result-box">
+                    --
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div id="pieChart"></div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div id="barChart"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <br>
+
+    <div class="card p-4">
+
+        <h4>Analysis History</h4>
+
+        <table class="table table-bordered table-striped">
+
+            <thead>
+                <tr>
+                    <th>Tweet</th>
+                    <th>Sentiment</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+
+            <tbody id="historyBody"></tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<footer>
+    Developed by Sneha N Reddy 🚀
+</footer>
+
+<script>
+
+let positive = 0;
+let negative = 0;
+let neutral = 0;
+
+function updateCharts(){
+
+    Plotly.newPlot('pieChart',[{
+        labels:['Positive','Negative','Neutral'],
+        values:[positive,negative,neutral],
+        type:'pie'
+    }],
+    {
+        title:'Sentiment Distribution'
+    });
+
+    Plotly.newPlot('barChart',[{
+        x:['Positive','Negative','Neutral'],
+        y:[positive,negative,neutral],
+        type:'bar'
+    }],
+    {
+        title:'Sentiment Count'
+    });
+}
+
+updateCharts();
+
+setInterval(()=>{
+    document.getElementById("clock").innerHTML =
+    new Date().toLocaleTimeString();
+},1000);
+
+document.getElementById("tweet")
+.addEventListener("input",function(){
+
+    document.getElementById("charCount")
+    .innerHTML=this.value.length;
+
+});
+
+function analyzeTweet(){
+
+    let tweet =
+    document.getElementById("tweet").value;
+
+    if(tweet.trim()===""){
+        alert("Please enter a tweet!");
+        return;
+    }
+
+    document.getElementById("loader")
+    .style.display="block";
+
+    fetch('/predict',{
+
+        method:'POST',
+
+        headers:{
+            'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+
+        body:'tweet='+
+        encodeURIComponent(tweet)
+
+    })
+
+    .then(response=>response.json())
+
+    .then(data=>{
+
+        document.getElementById("loader")
+        .style.display="none";
+
+        let emoji="😐";
+        let badge="neutral";
+
+        if(data.result==="Positive"){
+            emoji="😊";
+            badge="positive";
+            positive++;
+        }
+        else if(data.result==="Negative"){
+            emoji="😢";
+            badge="negative";
+            negative++;
+        }
+        else{
+            emoji="😐";
+            badge="neutral";
+            neutral++;
+        }
+
+        document.getElementById("result").innerHTML=
+        `<span class="sentiment-badge ${badge}">
+        ${emoji} ${data.result}
+        </span>`;
+
+        document.getElementById("confidence").innerHTML=
+        data.confidence + "%";
+
+        updateCharts();
+
+        document.getElementById("historyBody")
+        .innerHTML +=
+
+        `<tr>
+            <td>${tweet}</td>
+            <td>${emoji} ${data.result}</td>
+            <td>${data.confidence}%</td>
+        </tr>`;
+
+    })
+
+    .catch(error=>{
+
+        document.getElementById("loader")
+        .style.display="none";
+
+        console.error(error);
+
+        alert("Error analyzing tweet!");
+
+    });
+}
+
+</script>
+
+</body>
+</html>
