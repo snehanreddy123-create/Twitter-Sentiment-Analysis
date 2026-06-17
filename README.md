@@ -30,17 +30,27 @@ Twitter Sentiment140 Dataset
 ## How to Run
 
 1. Clone the repository
-2. Install dependencies
+2. Change to the app folder
 
+```powershell
+cd project/project
+```
+
+3. Install dependencies
+
+```powershell
 pip install -r requirements.txt
+```
 
-3. Run the application
+4. Run the application
 
+```powershell
 python pr.py
+```
 
-4. Open
+5. Open
 
-http://127.0.0.1:5000
+`http://127.0.0.1:5000`
 
 ## Author
 
