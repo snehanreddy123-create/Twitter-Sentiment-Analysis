@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template
+import os
 import pickle
 import re
 import nltk
@@ -7,10 +8,11 @@ from nltk.stem.porter import PorterStemmer
 
 nltk.download('stopwords')
 
-app = Flask(__name__)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(script_dir, 'templates'))
 
-loaded_model = pickle.load(open('trained_model.sav', 'rb'))
-loaded_vectorizer = pickle.load(open('vectorizer.sav', 'rb'))
+loaded_model = pickle.load(open(os.path.join(script_dir, 'trained_model.sav'), 'rb'))
+loaded_vectorizer = pickle.load(open(os.path.join(script_dir, 'vectorizer.sav'), 'rb'))
 
 port_stem = PorterStemmer()
 stop_words = set(stopwords.words('english'))
