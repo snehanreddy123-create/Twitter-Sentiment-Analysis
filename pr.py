@@ -6,7 +6,8 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
-nltk.download('stopwords', quiet=True)
+nltk.data.path.append('/tmp')
+nltk.download('stopwords', download_dir='/tmp', quiet=True)
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, template_folder=os.path.join(script_dir, 'templates'))
