@@ -2,7 +2,7 @@ services:
   - type: web
     name: twitter-sentiment-analysis
     env: python
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "pip install -r requirements.txt && python -m nltk.downloader stopwords"
     startCommand: "gunicorn pr:app"
     envVars:
       - key: PYTHON_VERSION
